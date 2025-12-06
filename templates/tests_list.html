@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <h2>Available Tests</h2>
+  {% if tests %}
+    <div style="display: grid; gap: 1rem;">
+      {% for t in tests %}
+        <div class="list-item">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem;">{{ t.title }}</h3>
+              <p style="margin: 0; color: var(--text-secondary); font-size: 0.875rem;">Created: {{ t.created_at|date:"M d, Y" }}</p>
+            </div>
+            <a href="{% url 'test_start' t.id %}" class="btn">Start Test</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h3>No tests available</h3>
+      <p>Check back later for new tests.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

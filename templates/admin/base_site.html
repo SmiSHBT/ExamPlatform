@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">Exam Platform Admin</a></h1>
+{% endblock %}
+
+{% block userlinks %}
+{{ block.super }}
+<span style="margin-left: 15px;">|</span>
+<a href="{% url 'tests_list' %}" style="margin-left: 15px; padding: 5px 12px; background: #417690; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; transition: background 0.2s;">Exit to Main Page</a>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+

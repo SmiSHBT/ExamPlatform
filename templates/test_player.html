@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h2 style="margin: 0 0 0.5rem 0;">{{ test.title }}</h2>
+      <p style="margin: 0; color: var(--text-secondary); font-size: 0.875rem;">Result ID: {{ result.id }}</p>
+    </div>
+  </div>
+  
+  <div class="iframe-container">
+    <iframe id="test_iframe" src="/{{ test.file_path }}" width="100%" height="600px" sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups"></iframe>
+  </div>
+
+  <form id="submit_form" method="post" action="{% url 'test_submit' test.id %}" style="margin-top: 1.5rem;">
+    {% csrf_token %}
+    <input type="hidden" name="result_id" value="{{ result.id }}">
+    <input type="hidden" name="answers" id="answers_input">
+    <div class="form-actions">
+      <button type="button" onclick="collectAndSubmit()" class="btn">✅ Submit Test</button>
+      <button type="button" onclick="takeScreenshot()" class="btn btn-success">📸 Take Screenshot</button>
+    </div>
+  </form>
+</div>
+
+<script>
+const RESULT_ID = "{{ result.id }}";
+const TEST_ID = "{{ test.id }}";
+
+window.ANTICHEAT_CONTEXT = { result_id: RESULT_ID, test_id: TEST_ID };
+
+const iframe = document.getElementById('test_iframe');
+iframe.addEventListener('load', function() {
+  try {
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    const iframeWindow = iframe.contentWindow;
+    
+    iframeWindow.ANTICHEAT_CONTEXT = { result_id: RESULT_ID, test_id: TEST_ID };
+    
+    if (!iframeDoc.querySelector('script[src*="anticheat.js"]')) {
+      const script = iframeDoc.createElement('script');
+      script.src = '/static/js/anticheat.js';
+      iframeDoc.head.appendChild(script);
+    }
+  } catch(e) {
+    console.log('Could not inject script into iframe (this is normal if sandboxed):', e);
+  }
+});
+
+function collectAndSubmit(){
+  const iframe = document.getElementById('test_iframe');
+  let messageHandler = null;
+  
+  messageHandler = function(ev){
+    if(ev.data && ev.data.type==='answers'){
+      document.getElementById('answers_input').value = JSON.stringify(ev.data.answers);
+      document.getElementById('submit_form').submit();
+      window.removeEventListener('message', messageHandler);
+    }
+  };
+  window.addEventListener('message', messageHandler);
+  
+  try {
+    const answers = iframe.contentWindow.getAnswers ? iframe.contentWindow.getAnswers() : null;
+    if (answers !== null) {
+      const serialized = JSON.stringify(answers);
+      document.getElementById('answers_input').value = serialized;
+      document.getElementById('submit_form').submit();
+      window.removeEventListener('message', messageHandler);
+    } else {
+      iframe.contentWindow.postMessage({type:'request_answers'}, '*');
+    }
+  } catch(e){
+    iframe.contentWindow.postMessage({type:'request_answers'}, '*');
+  }
+}
+
+function takeScreenshot() {
+  const iframe = document.getElementById('test_iframe');
+  const button = event.target;
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = '📸 Capturing...';
+  
+  if (typeof html2canvas === 'undefined') {
+    alert('Screenshot library is loading. Please wait a moment and try again.');
+    button.disabled = false;
+    button.textContent = originalText;
+    return;
+  }
+  
+  try {
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    const iframeBody = iframeDoc.body;
+    
+    html2canvas(iframeBody, {
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      scale: 1,
+      windowWidth: iframe.contentWindow.innerWidth,
+      windowHeight: iframe.contentWindow.innerHeight
+    }).then(canvas => {
+      sendScreenshot(canvas.toDataURL('image/png'));
+      button.disabled = false;
+      button.textContent = originalText;
+    }).catch(err => {
+      console.error('Iframe capture error, trying fallback:', err);
+      html2canvas(document.body, {
+        useCORS: true,
+        allowTaint: true,
+        logging: false
+      }).then(canvas => {
+        sendScreenshot(canvas.toDataURL('image/png'));
+        button.disabled = false;
+        button.textContent = originalText;
+      }).catch(err2 => {
+        console.error('Screenshot error:', err2);
+        alert('Failed to capture screenshot. Please try again.');
+        button.disabled = false;
+        button.textContent = originalText;
+      });
+    });
+  } catch(e) {
+    html2canvas(document.body, {
+      useCORS: true,
+      allowTaint: true,
+      logging: false
+    }).then(canvas => {
+      sendScreenshot(canvas.toDataURL('image/png'));
+      button.disabled = false;
+      button.textContent = originalText;
+    }).catch(err => {
+      console.error('Screenshot error:', err);
+      alert('Failed to capture screenshot: ' + err.message);
+      button.disabled = false;
+      button.textContent = originalText;
+    });
+  }
+}
+
+function sendScreenshot(imageData) {
+  console.log('Sending screenshot to server...');
+  fetch('/test/' + TEST_ID + '/screenshot/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      result_id: RESULT_ID,
+      screenshot: imageData
+    }),
+    credentials: 'same-origin'
+  })
+  .then(response => {
+    console.log('Response status:', response.status);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('Response data:', data);
+    if (data.status === 'ok') {
+      alert('✅ Screenshot captured and sent to admin!');
+    } else {
+      alert('❌ Error: ' + (data.msg || 'Failed to send screenshot'));
+    }
+  })
+  .catch(error => {
+    console.error('Error sending screenshot:', error);
+    alert('❌ Failed to send screenshot: ' + error.message + '. Check browser console for details.');
+  });
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+{% endblock %}

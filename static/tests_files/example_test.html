@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Sample Test</title></head>
+<body>
+<h3>Sample Test</h3>
+<form id="t">
+  <p>1) 2+2 = <input name="q1" /></p>
+  <p>2) Select: <select name="q2"><option value="a">A</option><option value="b">B</option></select></p>
+</form>
+<script>
+function getAnswers(){
+  const f = document.getElementById('t');
+  const data = {
+    q1: f.elements['q1'].value,
+    q2: f.elements['q2'].value
+  };
+  return data;
+}
+window.addEventListener('message', function(ev){
+  if(ev.data && ev.data.type==='request_answers'){
+    const answers = getAnswers();
+    ev.source.postMessage({type:'answers', answers: answers}, ev.origin || '*');
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 2rem auto;">
+  <h2>Upload Test</h2>
+  <p style="color: var(--text-secondary); margin-bottom: 2rem;">Upload an HTML file containing your test questions and interface.</p>
+  
+  {% if form.errors %}
+    <div class="alert alert-error">
+      <strong>Please correct the errors below:</strong>
+      {{ form.errors }}
+    </div>
+  {% endif %}
+  
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="id_title">Test Title</label>
+      {{ form.title }}
+      {% if form.title.errors %}
+        <div class="alert alert-error">{{ form.title.errors }}</div>
+      {% endif %}
+    </div>
+    <div class="form-group">
+      <label for="id_file">HTML File</label>
+      {{ form.file }}
+      {% if form.file.errors %}
+        <div class="alert alert-error">{{ form.file.errors }}</div>
+      {% endif %}
+      <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">Only HTML files (.html, .htm) are allowed.</small>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn-success">📤 Upload Test</button>
+      <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

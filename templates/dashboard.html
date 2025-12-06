@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2 style="margin: 0;">Admin Dashboard</h2>
+    <a href="{% url 'upload_test' %}" class="btn btn-success">📤 Upload Test</a>
+  </div>
+  
+  {% if results %}
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Test</th>
+            <th>Started</th>
+            <th>Finished</th>
+            <th>Focus Losses</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in results %}
+          <tr>
+            <td><strong>{{ r.user.username }}</strong></td>
+            <td>{{ r.test.title }}</td>
+            <td>{{ r.start_time|date:"M d, Y H:i" }}</td>
+            <td>{{ r.finish_time|date:"M d, Y H:i" }}</td>
+            <td>
+              {% if r.focus_loss_count > 0 %}
+                <span class="badge badge-danger">{{ r.focus_loss_count }}</span>
+              {% else %}
+                <span class="badge badge-success">0</span>
+              {% endif %}
+            </td>
+            <td><a href="/admin/core/result/{{ r.id }}/change/">View Details</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h3>No results yet</h3>
+      <p>Results will appear here once students complete tests.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

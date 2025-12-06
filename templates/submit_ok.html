@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 4rem auto; text-align: center;">
+  <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
+  <h2 style="color: var(--success-color);">Test Submitted Successfully!</h2>
+  <p style="font-size: 1.125rem; margin-bottom: 2rem;">Your answers have been saved.</p>
+  
+  <div style="background: #f1f5f9; padding: 1.5rem; border-radius: var(--radius); margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+      <span style="color: var(--text-secondary);">Focus Losses:</span>
+      <strong style="color: {% if result.focus_loss_count > 0 %}var(--danger-color){% else %}var(--success-color){% endif %};">
+        {{ result.focus_loss_count }}
+      </strong>
+    </div>
+    <div style="display: flex; justify-content: space-between;">
+      <span style="color: var(--text-secondary);">Test:</span>
+      <strong>{{ result.test.title }}</strong>
+    </div>
+  </div>
+  
+  <a href="{% url 'tests_list' %}" class="btn" style="width: 100%;">Back to Tests</a>
+</div>
+{% endblock %}

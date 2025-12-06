@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Platform</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="/static/js/anticheat.js"></script>
+</head>
+<body>
+  <nav>
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem;">
+      <div>
+        <a href="{% url 'tests_list' %}" style="font-size: 1.25rem; font-weight: 600;">📚 Exam Platform</a>
+      </div>
+      <div>
+        {% if user.is_authenticated %}
+          <span style="color: var(--text-secondary); margin-right: 1rem;">👤 {{ user.username }}</span>
+          {% if user.is_superuser %}
+            <a href="{% url 'dashboard' %}">Dashboard</a>
+          {% endif %}
+          <a href="{% url 'logout' %}">Logout</a>
+        {% else %}
+          <a href="{% url 'login' %}">Login</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>
