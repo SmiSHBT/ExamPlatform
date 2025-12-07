@@ -1,5 +1,4 @@
-// Minimal anti-cheat script. Sends focus events to server.
-// Expects window.ANTICHEAT_CONTEXT = { result_id, test_id } to be set by page.
+
 
 (function(){
   function sendEvent(type, extra){
