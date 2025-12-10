@@ -1,8 +1,42 @@
 
 
 (function(){
+  function focusSuppressed(){
+    try{
+      return !!window.ANTICHEAT_SUPPRESS_FOCUS || (!!window.parent && window.parent !== window && !!window.parent.ANTICHEAT_SUPPRESS_FOCUS);
+    }catch(e){
+      return !!window.ANTICHEAT_SUPPRESS_FOCUS;
+    }
+  }
+
+  function isPageVisible(){
+    try{
+      return document.visibilityState === 'visible';
+    }catch(e){
+      return true;
+    }
+  }
+
+  function pageHasFocus(){
+    try{
+      return typeof document.hasFocus === 'function' ? document.hasFocus() : true;
+    }catch(e){
+      return true;
+    }
+  }
+
   function sendEvent(type, extra){
     try{
+      if (focusSuppressed()) return;
+      if (type === 'blur' || type === 'focusout') {
+        if (isPageVisible()) {
+          // If the page is visible but the window lost focus (e.g., user switched windows), count it
+          if (pageHasFocus()) {
+            // Still focused inside the page — ignore
+            return;
+          }
+        }
+      }
       const ctx = window.ANTICHEAT_CONTEXT || {};
       if(!ctx.result_id) return;
       fetch('/test/' + ctx.test_id + '/save-focus/', {

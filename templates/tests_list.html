@@ -2,6 +2,12 @@
 {% block content %}
 <div class="card">
   <h2>Available Tests</h2>
+  {% if request.GET.msg == 'screenshot_success' %}
+    <div class="alert success">Screenshot captured and sent successfully.</div>
+  {% endif %}
+  {% if request.GET.msg == 'submit_success' %}
+    <div class="alert success">Test submitted successfully.</div>
+  {% endif %}
   {% if tests %}
     <div style="display: grid; gap: 1rem;">
       {% for t in tests %}

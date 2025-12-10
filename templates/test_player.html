@@ -9,7 +9,7 @@
   </div>
   
   <div class="iframe-container">
-    <iframe id="test_iframe" src="/{{ test.file_path }}" width="100%" height="600px" sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups"></iframe>
+    <iframe id="test_iframe" src="{% url 'test_file' test.id %}" width="100%" height="600px" sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups"></iframe>
   </div>
 
   <form id="submit_form" method="post" action="{% url 'test_submit' test.id %}" style="margin-top: 1.5rem;">
@@ -81,11 +81,17 @@ function takeScreenshot() {
   const originalText = button.textContent;
   button.disabled = true;
   button.textContent = '📸 Capturing...';
+  window.ANTICHEAT_SUPPRESS_FOCUS = true;
+  try {
+    iframe.contentWindow.ANTICHEAT_SUPPRESS_FOCUS = true;
+  } catch(e) {}
   
   if (typeof html2canvas === 'undefined') {
     alert('Screenshot library is loading. Please wait a moment and try again.');
     button.disabled = false;
     button.textContent = originalText;
+    window.ANTICHEAT_SUPPRESS_FOCUS = false;
+    try { iframe.contentWindow.ANTICHEAT_SUPPRESS_FOCUS = false; } catch(e) {}
     return;
   }
   
@@ -104,6 +110,8 @@ function takeScreenshot() {
       sendScreenshot(canvas.toDataURL('image/png'));
       button.disabled = false;
       button.textContent = originalText;
+      window.ANTICHEAT_SUPPRESS_FOCUS = false;
+      try { iframe.contentWindow.ANTICHEAT_SUPPRESS_FOCUS = false; } catch(e) {}
     }).catch(err => {
       console.error('Iframe capture error, trying fallback:', err);
       html2canvas(document.body, {
@@ -114,11 +122,15 @@ function takeScreenshot() {
         sendScreenshot(canvas.toDataURL('image/png'));
         button.disabled = false;
         button.textContent = originalText;
+        window.ANTICHEAT_SUPPRESS_FOCUS = false;
+        try { iframe.contentWindow.ANTICHEAT_SUPPRESS_FOCUS = false; } catch(e) {}
       }).catch(err2 => {
         console.error('Screenshot error:', err2);
         alert('Failed to capture screenshot. Please try again.');
         button.disabled = false;
         button.textContent = originalText;
+        window.ANTICHEAT_SUPPRESS_FOCUS = false;
+        try { iframe.contentWindow.ANTICHEAT_SUPPRESS_FOCUS = false; } catch(e) {}
       });
     });
   } catch(e) {
@@ -130,11 +142,15 @@ function takeScreenshot() {
       sendScreenshot(canvas.toDataURL('image/png'));
       button.disabled = false;
       button.textContent = originalText;
+      window.ANTICHEAT_SUPPRESS_FOCUS = false;
+      try { iframe.contentWindow.ANTICHEAT_SUPPRESS_FOCUS = false; } catch(e) {}
     }).catch(err => {
       console.error('Screenshot error:', err);
       alert('Failed to capture screenshot: ' + err.message);
       button.disabled = false;
       button.textContent = originalText;
+      window.ANTICHEAT_SUPPRESS_FOCUS = false;
+      try { iframe.contentWindow.ANTICHEAT_SUPPRESS_FOCUS = false; } catch(e) {}
     });
   }
 }
@@ -163,6 +179,7 @@ function sendScreenshot(imageData) {
     console.log('Response data:', data);
     if (data.status === 'ok') {
       alert('✅ Screenshot captured and sent to admin!');
+      window.location.href = '/tests/?msg=screenshot_success';
     } else {
       alert('❌ Error: ' + (data.msg || 'Failed to send screenshot'));
     }

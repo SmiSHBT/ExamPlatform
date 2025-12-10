@@ -4,10 +4,11 @@ import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponseForbidden, Http404, FileResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.conf import settings
+from pathlib import Path
 from .models import Test, Result, FocusLog, Screenshot
 from .forms import UploadTestForm
 from .decorators import auth_required
@@ -85,7 +86,7 @@ def test_submit(request, test_id):
     r.answers_json = answers
     r.finish_time = timezone.now()
     r.save()
-    return render(request, 'submit_ok.html', {'result':r})
+    return redirect('/tests/?msg=submit_success')
 
 @user_passes_test(lambda u: u.is_superuser)
 def dashboard(request):
@@ -103,17 +104,40 @@ def upload_test(request):
                 form.add_error('file', 'Only HTML files are allowed')
                 return render(request, 'upload_test.html', {'form':form})
             safe_filename = os.path.basename(f.name)
-            upload_dir = os.path.join('static', 'tests_files')
-            os.makedirs(upload_dir, exist_ok=True)
-            save_path = os.path.join(upload_dir, safe_filename)
+            upload_dir = Path(settings.MEDIA_ROOT) / 'tests_files'
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            save_path = upload_dir / safe_filename
             with open(save_path, 'wb') as dest:
                 for chunk in f.chunks():
                     dest.write(chunk)
-            Test.objects.create(title=title, file_path=save_path)
+            relative_path = os.path.relpath(save_path, settings.BASE_DIR).replace('\\', '/')
+            Test.objects.create(title=title, file_path=relative_path)
             return redirect('dashboard')
     else:
         form = UploadTestForm()
     return render(request, 'upload_test.html', {'form':form})
+
+@auth_required
+def test_file(request, test_id):
+    """Serve test HTML file so it works in production without static hosting issues."""
+    t = get_object_or_404(Test, pk=test_id)
+    raw_path = t.file_path or ''
+    base_dir = Path(settings.BASE_DIR)
+
+    # Resolve absolute path safely
+    candidate = Path(raw_path)
+    if not candidate.is_absolute():
+        candidate = (base_dir / raw_path).resolve()
+    else:
+        candidate = candidate.resolve()
+
+    if not str(candidate).startswith(str(base_dir)):
+        return HttpResponseForbidden('Invalid file path')
+    if not candidate.exists():
+        raise Http404('Test file not found')
+
+    # Force HTML content type for iframe rendering
+    return FileResponse(open(candidate, 'rb'), content_type='text/html')
 
 def send_telegram_message(bot_token, chat_id, message, image_path=None):
     if not bot_token or not chat_id:
