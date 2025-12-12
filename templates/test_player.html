@@ -27,6 +27,23 @@
 const RESULT_ID = "{{ result.id }}";
 const TEST_ID = "{{ test.id }}";
 
+// Request fullscreen mode when test starts
+(function requestFullscreen() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log('Fullscreen request failed:', err);
+      });
+    } else if (document.documentElement.webkitRequestFullscreen) {
+      // Safari support
+      document.documentElement.webkitRequestFullscreen();
+    } else if (document.documentElement.msRequestFullscreen) {
+      // IE/Edge support
+      document.documentElement.msRequestFullscreen();
+    }
+  }
+})();
+
 window.ANTICHEAT_CONTEXT = { result_id: RESULT_ID, test_id: TEST_ID };
 
 const iframe = document.getElementById('test_iframe');
@@ -178,7 +195,7 @@ function sendScreenshot(imageData) {
   .then(data => {
     console.log('Response data:', data);
     if (data.status === 'ok') {
-      alert('✅ Screenshot captured and sent to admin!');
+      // Screenshot captured and sent successfully - redirect silently without alert
       window.location.href = '/tests/?msg=screenshot_success';
     } else {
       alert('❌ Error: ' + (data.msg || 'Failed to send screenshot'));

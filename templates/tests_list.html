@@ -17,7 +17,7 @@
               <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem;">{{ t.title }}</h3>
               <p style="margin: 0; color: var(--text-secondary); font-size: 0.875rem;">Created: {{ t.created_at|date:"M d, Y" }}</p>
             </div>
-            <a href="{% url 'test_start' t.id %}" class="btn">Start Test</a>
+            <a href="{% url 'test_start' t.id %}" class="btn start-test-btn" data-test-id="{{ t.id }}">Start Test</a>
           </div>
         </div>
       {% endfor %}
@@ -29,4 +29,40 @@
     </div>
   {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const startTestButtons = document.querySelectorAll('.start-test-btn');
+  
+  startTestButtons.forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      const testUrl = this.getAttribute('href');
+      
+      // Request fullscreen mode
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().then(() => {
+          // Navigate to test page after fullscreen is activated
+          window.location.href = testUrl;
+        }).catch(err => {
+          console.log('Fullscreen request failed:', err);
+          // Navigate anyway if fullscreen fails
+          window.location.href = testUrl;
+        });
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        // Safari support
+        document.documentElement.webkitRequestFullscreen();
+        window.location.href = testUrl;
+      } else if (document.documentElement.msRequestFullscreen) {
+        // IE/Edge support
+        document.documentElement.msRequestFullscreen();
+        window.location.href = testUrl;
+      } else {
+        // Fallback if fullscreen is not supported
+        window.location.href = testUrl;
+      }
+    });
+  });
+});
+</script>
 {% endblock %}
